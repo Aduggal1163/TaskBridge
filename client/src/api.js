@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-axios.defaults.timeout = 10000; // 10 second timeout
+axios.defaults.timeout = 30000; // 10 second timeout
 
 // Add request interceptor to include auth token
 axios.interceptors.request.use(
