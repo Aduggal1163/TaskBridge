@@ -42,7 +42,10 @@ async function start() {
     console.log('Connected to MongoDB');
     const server = http.createServer(app);
     const io = new SocketIOServer(server, {
-      cors: { origin: process.env.CLIENT_URL || '*', credentials: true },
+        cors: {
+    origin: '*',               // Allow all origins
+    methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'], // Allow all common HTTP methods
+  },
     });
     attachIo(io);
     io.on('connection', (socket) => {

@@ -1,60 +1,86 @@
 import { Router } from 'express';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
-import { authenticateJwt, authorizeRoles } from '../middleware/auth.js';
 import Project from '../models/Project.js';
+import { authenticateJwt, authorizeRoles } from '../middleware/auth.js';
 import { logActivity } from '../services/activity.js';
 
 const router = Router();
 
-// Only admin and project_manager can create/assign tasks
-router.post('/', authenticateJwt, authorizeRoles('admin', 'project_manager'), async (req, res) => {
-  try {
-    const { title, description, project, assignees } = req.body;
+/**
+ * POST /api/tasks
+ * Create / assign a new task
+ * Only admin or project_manager can create
+ */
+router.post(
+  '/',
+  authenticateJwt,
+  authorizeRoles('admin', 'project_manager'),
+  async (req, res) => {
+    try {
+      const { title, description, project, assignees } = req.body;
 
-    // Validate assignees belong to the project's team
-    const proj = await Project.findById(project).populate('team');
-    if (!proj) return res.status(400).json({ message: 'Invalid project' });
-    const teamId = proj.team?._id?.toString();
-    if (!teamId) return res.status(400).json({ message: 'Project has no team' });
+      // Validate project exists and has a team
+      const proj = await Project.findById(project).populate({
+        path: 'team',
+        populate: { path: 'members', select: '_id' },
+      });
 
-    if (Array.isArray(assignees) && assignees.length > 0) {
-      // Load team members to validate
-      const projWithMembers = await Project.findById(project).populate({ path: 'team', populate: { path: 'members', select: '_id' } });
-      const memberIds = new Set((projWithMembers.team?.members || []).map((m) => m._id.toString()));
-      const invalid = assignees.filter((id) => !memberIds.has(id.toString()));
-      if (invalid.length) {
-        return res.status(400).json({ message: 'One or more assignees are not members of the project team', invalid });
+      if (!proj) return res.status(400).json({ message: 'Invalid project' });
+      if (!proj.team || !proj.team.members.length) {
+        return res.status(400).json({ message: 'Project has no team members' });
       }
-    }
-    const task = await Task.create({ title, description, project, assignees });
-    const recipients = await User.find({ _id: { $in: assignees || [] } }).select('email');
-    await logActivity({
-      action: 'task_created',
-      user: req.user._id,
-      project,
-      task: task._id,
-      details: { title },
-      notify: recipients,
-    });
-    res.status(201).json(task);
-  } catch (err) {
-    res.status(400).json({ message: 'Create task failed', error: err.message });
-  }
-});
 
+      // Validate assignees belong to team
+      if (Array.isArray(assignees) && assignees.length > 0) {
+        const memberIds = new Set(proj.team.members.map((m) => m._id.toString()));
+        const invalid = assignees.filter((id) => !memberIds.has(id.toString()));
+        if (invalid.length) {
+          return res.status(400).json({
+            message: 'One or more assignees are not members of the project team',
+            invalid,
+          });
+        }
+      }
+
+      // Create task
+      const task = await Task.create({ title, description, project, assignees });
+
+      // Get recipient emails for notifications (optional)
+      const recipients = await User.find({ _id: { $in: assignees || [] } }).select('email');
+
+      // Fire-and-forget logging to avoid blocking frontend
+      logActivity({
+        action: 'task_created',
+        user: req.user._id,
+        project,
+        task: task._id,
+        details: { title },
+        notify: recipients,
+      }).catch((err) => console.error('LogActivity failed', err));
+
+      // Respond immediately
+      res.status(201).json(task);
+    } catch (err) {
+      console.error('Error creating task:', err);
+      res.status(400).json({ message: 'Create task failed', error: err.message });
+    }
+  }
+);
+
+/**
+ * GET /api/tasks
+ * Get all tasks
+ */
 router.get('/', authenticateJwt, async (_req, res) => {
   try {
     const tasks = await Task.find()
       .populate('assignees', 'name email')
       .populate({
         path: 'project',
-        populate: {
-          path: 'team',
-          select: 'name'
-        }
+        populate: { path: 'team', select: 'name' },
       });
-    
+
     res.json(tasks);
   } catch (err) {
     console.error('Error fetching tasks:', err);
@@ -62,21 +88,30 @@ router.get('/', authenticateJwt, async (_req, res) => {
   }
 });
 
-// Tasks assigned to the current user
+/**
+ * GET /api/tasks/my
+ * Tasks assigned to the current user
+ */
 router.get('/my', authenticateJwt, async (req, res) => {
   try {
     const tasks = await Task.find({ assignees: req.user._id })
       .populate('assignees', 'name email role')
       .populate({
         path: 'project',
-        populate: { path: 'team', select: 'name' }
+        populate: { path: 'team', select: 'name' },
       });
+
     res.json(tasks);
   } catch (err) {
+    console.error('Error fetching my tasks:', err);
     res.status(500).json({ message: 'Error fetching my tasks', error: err.message });
   }
 });
 
+/**
+ * PATCH /api/tasks/:id/status
+ * Update task status
+ */
 router.patch('/:id/status', authenticateJwt, async (req, res) => {
   try {
     const task = await Task.findByIdAndUpdate(
@@ -84,20 +119,22 @@ router.patch('/:id/status', authenticateJwt, async (req, res) => {
       { status: req.body.status },
       { new: true }
     );
-    await logActivity({
+
+    // Fire-and-forget logging for status change
+    logActivity({
       action: 'task_status_changed',
       user: req.user._id,
       project: task.project,
       task: task._id,
       details: { status: task.status },
       notify: [],
-    });
+    }).catch((err) => console.error('LogActivity failed', err));
+
     res.json(task);
   } catch (err) {
+    console.error('Error updating task status:', err);
     res.status(400).json({ message: 'Update status failed', error: err.message });
   }
 });
 
 export default router;
-
-
