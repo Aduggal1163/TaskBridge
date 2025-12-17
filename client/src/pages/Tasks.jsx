@@ -86,27 +86,34 @@ export default function TasksPage() {
   }, [tasks]);
 
   async function onCreate(e) {
-    e.preventDefault();
-    if (!title.trim()) {
-      setError("Task title is required");
-      return;
-    }
-
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const newTask = await createTask({ title, project, assignees });
-      setTasks((prev) => [newTask, ...prev]);
-      setTitle("");
-      setAssignees([]);
-    } catch (error) {
-      console.error("Failed to create task:", error);
-      setError(handleApiError(error));
-    } finally {
-      setIsLoading(false);
-    }
+  e.preventDefault();
+  if (!title.trim()) {
+    setError("Task title is required");
+    return;
   }
+
+  setIsLoading(true);
+  setError("");
+
+  try {
+    // Create the task
+    await createTask({ title, project, assignees });
+
+    // Re-fetch tasks to refresh the board
+    const tasksData = await fetchTasks();
+    setTasks(tasksData);
+
+    // Reset input fields
+    setTitle("");
+    setAssignees([]);
+  } catch (error) {
+    console.error("Failed to create task:", error);
+    setError(handleApiError(error));
+  } finally {
+    setIsLoading(false);
+  }
+}
+
 
   function handleAssigneeChange(userId, checked) {
     if (checked) {
