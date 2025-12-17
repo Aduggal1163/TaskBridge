@@ -1,4 +1,4 @@
-# JIRA Project Management Platform
+# TBridge Project Management Platform
 
 A modern, full-stack project management application built with MERN stack.
 

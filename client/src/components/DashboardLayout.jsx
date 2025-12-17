@@ -77,7 +77,7 @@ const DashboardLayout = ({ children }) => {
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
             <Link to="/dashboard" className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600">JIRA</h1>
+              <h1 className="text-2xl font-bold text-blue-600">TBridge</h1>
             </Link>
             <button
               onClick={() => setIsSidebarOpen(false)}

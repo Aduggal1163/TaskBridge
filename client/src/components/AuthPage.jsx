@@ -66,7 +66,7 @@ const AuthPage = () => {
         {/* Header */}
         <div className="text-center">
           <Link to="/" className="inline-block">
-            <h1 className="text-4xl font-bold text-blue-600 mb-2">JIRA</h1>
+            <h1 className="text-4xl font-bold text-blue-600 mb-2">TBridge</h1>
           </Link>
           <h2 className="text-2xl font-bold text-gray-900">
             {isLogin ? 'Welcome back' : 'Create your account'}

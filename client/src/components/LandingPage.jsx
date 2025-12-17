@@ -20,7 +20,7 @@ const LandingPage = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-blue-600">JIRA</h1>
+                <h1 className="text-2xl font-bold text-blue-600">TBridge</h1>
               </div>
             </div>
             
@@ -246,7 +246,7 @@ const LandingPage = () => {
                 About Our Platform
               </h2>
               <p className="text-lg text-gray-600 mb-6">
-                We built JIRA to solve the challenges that modern teams face when managing complex projects. 
+                We built TBridge to solve the challenges that modern teams face when managing complex projects. 
                 Our platform combines powerful project management tools with intuitive design to help teams 
                 work more efficiently and deliver better results.
               </p>
@@ -330,7 +330,7 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Email</h4>
-                    <p className="text-gray-600">support@jira-platform.com</p>
+                    <p className="text-gray-600">support@TBridge-platform.com</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -406,7 +406,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
-              <h3 className="text-2xl font-bold mb-4">JIRA</h3>
+              <h3 className="text-2xl font-bold mb-4">TBridge</h3>
               <p className="text-gray-400 mb-6 max-w-md">
                 The modern project management platform that helps teams collaborate, track progress, and deliver results.
               </p>
@@ -448,7 +448,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 JIRA Platform. All rights reserved.</p>
+            <p>&copy; 2024 TBridge Platform. All rights reserved.</p>
           </div>
         </div>
       </footer>
