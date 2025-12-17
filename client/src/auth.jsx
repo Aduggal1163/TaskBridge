@@ -1,46 +1,55 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import {jwtDecode} from 'jwt-decode';
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('auth');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setUser(parsed.user);
-      setToken(parsed.token);
+   useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode(storedToken);
+        setUser({ id: decoded.sub, role: decoded.role });
+        setToken(storedToken);
+      } catch {
+        localStorage.removeItem('token');
+      }
     }
   }, []);
 
   useEffect(() => {
-    axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://taskbridge-uot0.onrender.com/api';
     if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     else delete axios.defaults.headers.common['Authorization'];
   }, [token]);
 
   const login = async (email, password) => {
     const { data } = await axios.post('/auth/login', { email, password });
-    setUser(data.user);
+    // setUser(data.user);
+    // setToken(data.token);
+    // localStorage.setItem('auth', JSON.stringify({ user: data.user, token: data.token }));
+    localStorage.setItem('token', data.token);
+    const decoded = jwtDecode(data.token);
+    setUser({ id: decoded.sub, role: decoded.role });
     setToken(data.token);
-    localStorage.setItem('auth', JSON.stringify({ user: data.user, token: data.token }));
   };
 
   const signup = async (name, email, password, role = 'team_member') => {
     const { data } = await axios.post('/auth/signup', { name, email, password, role });
-    setUser(data.user);
+    localStorage.setItem('token', data.token);
+    const decoded = jwtDecode(data.token);
+    setUser({ id: decoded.sub, role: decoded.role });
     setToken(data.token);
-    localStorage.setItem('auth', JSON.stringify({ user: data.user, token: data.token }));
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth');
+    localStorage.removeItem('token');
   };
 
   const value = useMemo(() => ({ user, token, login, signup, logout }), [user, token]);
